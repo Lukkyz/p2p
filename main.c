@@ -7,6 +7,9 @@
 #include <event2/buffer.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include "config.h"
+#include "message.h"
+
 #define SA struct sockaddr
 
 void read_cb(struct bufferevent *bev, void *ctx) {
@@ -72,13 +75,15 @@ int main(int argc, char *argv[])
     connaddr.sin6_family = AF_INET6;
     connaddr.sin6_port = htons(conn_port);
     inet_pton(AF_INET6, "::1", &connaddr.sin6_addr);
-    
 
+    
     if (connect(sockfd, (SA*)&connaddr, sizeof(connaddr)) != 0) {
         printf("Connection with the server failed.\n");
     } else {
-        char buff[] = "PROTOCOL: P2P\r\nVERSION:0.1\r\n";
         printf("Connected to the server.");
+        struct MessageHeader *msg_header = header_msg_new(124, "abcdefgh");
+        char buff[2048];
+        msg_to_string(msg_header, buff);
         struct bufferevent *bev = bufferevent_socket_new(base, sockfd, BEV_OPT_CLOSE_ON_FREE);
         bufferevent_write(bev, buff, sizeof(buff));
     }
