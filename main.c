@@ -7,8 +7,6 @@
 #include <event2/buffer.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#define MAX 80
-#define PORT 7777
 #define SA struct sockaddr
 
 void read_cb(struct bufferevent *bev, void *ctx) {
