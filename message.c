@@ -41,6 +41,6 @@ struct MessageHeader *header_msg_new(uint32_t payload_size, char *data) {
     return msg_header;
 }
 
-void msg_to_string(struct MessageHeader *msg_header, char *string) {    
-    sprintf(string, "%.4s\r\n%s\r\n%d\r\n%s\r\n", msg_header->network, msg_header->command, msg_header->payload_size, msg_header->checksum);
+void msg_to_string(struct MessageHeader *msg_header, char message[], char *string) {    
+    sprintf(string, "%.4s\r\n%s\r\n%d\r\n%s\r\n\r\n%s\r\n", msg_header->network, msg_header->command, msg_header->payload_size, msg_header->checksum, message);
 }

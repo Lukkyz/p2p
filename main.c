@@ -18,9 +18,9 @@ void read_cb(struct bufferevent *bev, void *ctx) {
     struct evbuffer *output = bufferevent_get_input(bev);
     evbuffer_remove(input, buff, 1024);
     printf("%s", buff);
+	printf("%d", ctx[0]);
 }
-
-
+    
 void accept_conn_cb(struct evconnlistener *listener,
     evutil_socket_t fd, struct sockaddr *address, int socklen,
     void *ctx) {
@@ -37,10 +37,40 @@ void accept_error_cb(struct evconnlistener *listener, void *ctx) {
     event_base_loopexit(base, NULL);
 }
 
+void connect_to(struct event_base *base, int port) {
+	int sockfd, connfd;
+    struct sockaddr_in6 connaddr, cli; 
+    sockfd = socket(AF_INET6, SOCK_STREAM, 0);
+    if (sockfd == -1) {
+        printf("Socket creation failed...\n");
+    } else {
+        printf("Socket successfully created\n");
+    }
+    bzero(&connaddr, sizeof(connaddr));
+
+    connaddr.sin6_family = AF_INET6;
+    connaddr.sin6_port = htons(port);
+    inet_pton(AF_INET6, "::1", &connaddr.sin6_addr);
+
+    if (connect(sockfd, (SA*)&connaddr, sizeof(connaddr)) != 0) {
+        printf("Connection with the server failed.\n");
+    } else {
+        printf("Connected to the server.");
+        struct MessageHeader *msg_header = header_msg_new(124, "abcdefgh");
+        char buff[300];
+        msg_to_string(msg_header, "abcdefgh", buff);
+        struct bufferevent *bev = bufferevent_socket_new(base, sockfd, BEV_OPT_CLOSE_ON_FREE);
+        bufferevent_enable(bev, EV_READ);
+		bufferevent_setcb(bev, read_cb, NULL, NULL, port);
+        bufferevent_write(bev, buff, 300);
+    }
+}
+
 int main(int argc, char *argv[])
 {
     int server_port = atoi(argv[1]);
     int conn_port = atoi(argv[2]);
+    int conn_port_scnd = atoi(argv[3]);
 
     // Create server
     struct event_base *base = event_base_new();
@@ -61,32 +91,10 @@ int main(int argc, char *argv[])
     }
     evconnlistener_set_error_cb(listener, accept_error_cb);
 
+	connect_to(base, conn_port);
+	connect_to(base, conn_port_scnd);
     // Create a connection
-    int sockfd, connfd;
-    struct sockaddr_in6 connaddr, cli; 
-    sockfd = socket(AF_INET6, SOCK_STREAM, 0);
-    if (sockfd == -1) {
-        printf("Socket creation failed...\n");
-    } else {
-        printf("Socket successfully created\n");
-    }
-    bzero(&connaddr, sizeof(connaddr));
-
-    connaddr.sin6_family = AF_INET6;
-    connaddr.sin6_port = htons(conn_port);
-    inet_pton(AF_INET6, "::1", &connaddr.sin6_addr);
-
     
-    if (connect(sockfd, (SA*)&connaddr, sizeof(connaddr)) != 0) {
-        printf("Connection with the server failed.\n");
-    } else {
-        printf("Connected to the server.");
-        struct MessageHeader *msg_header = header_msg_new(124, "abcdefgh");
-        char buff[2048];
-        msg_to_string(msg_header, buff);
-        struct bufferevent *bev = bufferevent_socket_new(base, sockfd, BEV_OPT_CLOSE_ON_FREE);
-        bufferevent_write(bev, buff, sizeof(buff));
-    }
     event_base_dispatch(base);
     return 0;
 }
