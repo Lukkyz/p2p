@@ -1,4 +1,5 @@
 #include <netdb.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,24 +10,43 @@
 #include <arpa/inet.h>
 #include "config.h"
 #include "message.h"
+#include "hash.h"
 
 #define SA struct sockaddr
+#define OUT 0
+#define IN 1
+#define uc unsigned char
+
+struct Peer {
+	struct sockaddr_in6 *conn_addr;	
+	int direction;
+	bool init;
+};
 
 void read_cb(struct bufferevent *bev, void *ctx) {
     char buff[1024];
     struct evbuffer *input = bufferevent_get_input(bev);
     struct evbuffer *output = bufferevent_get_input(bev);
     evbuffer_remove(input, buff, 1024);
+	struct Peer *peer = ctx;
+	//printf("Direction : %d", peer->direction);
     printf("%s", buff);
-	printf("%d", ctx[0]);
 }
-    
+
 void accept_conn_cb(struct evconnlistener *listener,
     evutil_socket_t fd, struct sockaddr *address, int socklen,
     void *ctx) {
         struct event_base *base = evconnlistener_get_base(listener);
         struct bufferevent *bev = bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
-        bufferevent_setcb(bev, read_cb, NULL, NULL, NULL);
+		struct sockaddr_in6 *conn_addr = (struct sockaddr_in6 *) address;
+		struct Peer *new_peer;
+		new_peer = malloc(sizeof(struct Peer));
+		new_peer->conn_addr = conn_addr;
+		new_peer->direction = IN;
+		char ip[128];
+		inet_ntop(AF_INET6, &(conn_addr->sin6_addr), ip, 128);
+		// printf("%s %d\n", ip, conn_addr->sin6_port);
+        bufferevent_setcb(bev, read_cb, NULL, NULL, new_peer);
         bufferevent_enable(bev, EV_READ);
 }
 
@@ -56,13 +76,18 @@ void connect_to(struct event_base *base, int port) {
         printf("Connection with the server failed.\n");
     } else {
         printf("Connected to the server.");
-        struct MessageHeader *msg_header = header_msg_new(124, "abcdefgh");
-        char buff[300];
-        msg_to_string(msg_header, "abcdefgh", buff);
+		char ip[128];
+		inet_ntop(AF_INET6, &(connaddr.sin6_addr), ip, 128);
+       	struct VersionMessage *version = version_msg_new(ip, connaddr.sin6_port); 
+		char buff[1024];
         struct bufferevent *bev = bufferevent_socket_new(base, sockfd, BEV_OPT_CLOSE_ON_FREE);
-        bufferevent_enable(bev, EV_READ);
-		bufferevent_setcb(bev, read_cb, NULL, NULL, port);
-        bufferevent_write(bev, buff, 300);
+		version_to_string(version, buff);
+		char *string = "hello";
+		char final[65];
+		double_hash(string, final);
+		printf("%s", final);
+		bufferevent_setcb(bev, read_cb, NULL, NULL, NULL);
+        bufferevent_write(bev, buff, 1025);
     }
 }
 
@@ -83,8 +108,7 @@ int main(int argc, char *argv[])
     servaddr.sin6_addr = in6addr_any;
     servaddr.sin6_port = htons(server_port);
   
-    // Add listener for incoming connection
-    listener = evconnlistener_new_bind(base, accept_conn_cb,NULL, LEV_OPT_CLOSE_ON_FREE, -1, (struct sockaddr*)&servaddr, sizeof(servaddr));
+    listener = evconnlistener_new_bind(base, accept_conn_cb, NULL, LEV_OPT_CLOSE_ON_FREE, -1, (struct sockaddr*)&servaddr, sizeof(servaddr));
     if (!listener) {
         printf("Couldn't create listener.");
         return 1;
@@ -93,7 +117,6 @@ int main(int argc, char *argv[])
 
 	connect_to(base, conn_port);
 	connect_to(base, conn_port_scnd);
-    // Create a connection
     
     event_base_dispatch(base);
     return 0;
