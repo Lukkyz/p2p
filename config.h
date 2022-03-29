@@ -5,5 +5,6 @@
 #define NETWORK "main"
 #define SERVICE 0x01
 #define PEER_LIST "peer.conf"
+#define LOCAL 1
 
 #endif

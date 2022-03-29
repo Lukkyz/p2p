@@ -6,17 +6,17 @@
 
 void remove_line(FILE *fp, char *string, char *output) {
     char buffer[7];  // 7 because len of each line is 5 + trailing + NUL
-		     // terminator
+                     // terminator
     int i = 0;
     while (fgets(buffer, 7, fp) != NULL) {
-	char temp[7];
-	strcpy(temp, buffer);
-	temp[strcspn(temp, "\n")] =
-	    0;	// We need to remove end of line for comparing line to a string
-	if (strcmp(temp, string) != 0) {
-	    strcat(output, buffer);
-	    i++;
-	}
+        char temp[7];
+        strcpy(temp, buffer);
+        temp[strcspn(temp, "\n")] =
+            0;  // We need to remove end of line for comparing line to a string
+        if (strcmp(temp, string) != 0) {
+            strcat(output, buffer);
+            i++;
+        }
     }
 }
 
@@ -33,10 +33,10 @@ void parse_file(FILE *fp, char output[][5], int *total_line) {
     char buffer[7];
     int i = 0;
     while (fgets(buffer, 7, fp) != NULL) {
-	buffer[strcspn(buffer, "\n")] =
-	    0;	// We need to remove end of line for comparing line to a string
-	strcpy(output[i], buffer);
-	i++;
+        buffer[strcspn(buffer, "\n")] =
+            0;  // We need to remove end of line for comparing line to a string
+        strcpy(output[i], buffer);
+        i++;
     }
     *total_line = i;
 }
