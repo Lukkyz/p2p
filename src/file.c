@@ -1,18 +1,16 @@
-#include "utils.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "utils.h"
+
 void remove_line(FILE *fp, char *string, char *output) {
-    char buffer[7];  // 7 because len of each line is 5 + trailing + NUL
-                     // terminator
+    char buffer[7];
     int i = 0;
     while (fgets(buffer, 7, fp) != NULL) {
         char temp[7];
         strcpy(temp, buffer);
-        temp[strcspn(temp, "\n")] =
-            0;  // We need to remove end of line for comparing line to a string
+        temp[strcspn(temp, "\n")] = 0;  // We need to remove end of line for comparing line to a string
         if (strcmp(temp, string) != 0) {
             strcat(output, buffer);
             i++;

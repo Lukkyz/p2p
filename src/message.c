@@ -5,15 +5,14 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "config.h"
 #include "hash.h"
 #include "stdio.h"
 #include "string.h"
 
 struct VersionMessage *version_msg_new(char addr_recv[128], uint16_t port) {
     struct VersionMessage *version_msg = malloc(sizeof(*version_msg));
-    version_msg->version = VERSION;
-    version_msg->services = SERVICE;
+    version_msg->version = 1;
+    version_msg->services = 1;
     version_msg->addr_recv_port = port;
     version_msg->timestamp = (int)time(NULL);
     strcpy(version_msg->addr_recv, addr_recv);
@@ -26,7 +25,7 @@ void version_to_string(struct VersionMessage *version, char *string) {
 
 struct MessageHeader *header_msg_new(uint32_t payload_size, char *data) {
     struct MessageHeader *msg_header = malloc(sizeof(*msg_header));
-    strcpy(msg_header->network, NETWORK);
+    strcpy(msg_header->network, "1");
     strcpy(msg_header->command, "version");
     msg_header->payload_size = payload_size;
     char sha_buff[65];
