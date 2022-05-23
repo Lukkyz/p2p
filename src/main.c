@@ -19,50 +19,50 @@
 #include "utils.h"
 
 #define SA struct sockaddr
-int PORT;
 
 typedef struct {
-    bool local;
+  bool local;
 } configuration;
 
 void interrupt_cb(int code) {
-    FILE* f = fopen("peer.conf", "r");
-    long size = size_file(f);
-    char string[6];
-    sprintf(string, "%d", PORT);
-    char* output = calloc(size, 1);
-    remove_line(f, string, output);
-    fclose(f);
-    FILE* fp = fopen("peer.conf", "w");
-    fprintf(fp, "%s", output);
-    free(output);
-    fclose(fp);
-    exit(1);
+  FILE *f = fopen("peer.conf", "r");
+  long size = size_file(f);
+  char string[6];
+  char *output = calloc(size, 1);
+  remove_line(f, string, output);
+  fclose(f);
+  FILE *fp = fopen("peer.conf", "w");
+  fprintf(fp, "%s", output);
+  free(output);
+  fclose(fp);
+  exit(1);
 }
 
-static int handler(void* user, const char* section, const char* name, const char* value) {
-    configuration* pconfig = (configuration*)user;
+static int handler(void *user, const char *section, const char *name,
+                   const char *value) {
+  configuration *pconfig = (configuration *)user;
 #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
-    if (MATCH("protocol", "local")) {
-        pconfig->local = true;
-    } else {
-        return 0;
-    }
-    return 1;
+  if (MATCH("protocol", "local")) {
+    pconfig->local = true;
+  } else {
+    return 0;
+  }
+  return 1;
 }
 
-int main(int argc, char* argv[]) {
-    PORT = atoi(argv[1]);
+int main(int argc, char *argv[]) {
+  int serv_port = atoi(argv[1]);
+  int conn_port = atoi(argv[2]);
 
-    signal(SIGINT, interrupt_cb);
+  signal(SIGINT, interrupt_cb);
 
-    configuration config;
-    if (ini_parse("../../config.ini", handler, &config) < 0) {
-        printf("Can't load config.ini'");
-        return 1;
-    }
+  configuration config;
+  if (ini_parse("../../config.ini", handler, &config) < 0) {
+    printf("Can't load config.ini'");
+    return 1;
+  }
 
-    printf("Config loaded from test ini; local=%d\n", config.local);
-    node_init(PORT);
-    return 0;
+  printf("Config loaded from test ini; local=%d\n", config.local);
+  node_init(serv_port, conn_port);
+  return 0;
 }
