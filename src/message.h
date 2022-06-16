@@ -13,8 +13,8 @@ typedef struct  {
   int32_t version;
   uint64_t services;
   int64_t timestamp;
-  uint16_t addr_recv_port;
-  char addr_recv[16];
+  int addr_recv_port;
+  char addr_recv[128];
 } VersionMessage;
 
 msgpack_sbuffer *pack_header(int size);

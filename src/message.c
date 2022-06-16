@@ -27,14 +27,28 @@ msgpack_sbuffer *pack_version_msg(VersionMessage *version_msg) {
   msgpack_packer pk;
   msgpack_packer_init(&pk, sbuf, msgpack_sbuffer_write);
 
-  msgpack_pack_map(&pk, 2);
+  msgpack_pack_map(&pk, 5);
+
   msgpack_pack_str(&pk, 8);
   msgpack_pack_str_body(&pk, "version", 8);
-  msgpack_pack_int(&pk, 1);
+  msgpack_pack_int(&pk, version_msg->version);
 
-  msgpack_pack_str(&pk, 6);
-  msgpack_pack_str_body(&pk, "check", 6);
-  msgpack_pack_int(&pk, 1);
+  msgpack_pack_str(&pk, 9);
+  msgpack_pack_str_body(&pk, "services", 9);
+  msgpack_pack_int(&pk, version_msg->services);
+
+  msgpack_pack_str(&pk, 10);
+  msgpack_pack_str_body(&pk, "timestamp", 10);
+  msgpack_pack_int(&pk, version_msg->timestamp);
+
+  msgpack_pack_str(&pk, 15);
+  msgpack_pack_str_body(&pk, "addr_recv_port", 15);
+  msgpack_pack_int(&pk, version_msg->addr_recv_port);
+
+  msgpack_pack_str(&pk, 10);
+  msgpack_pack_str_body(&pk, "addr_recv", 10);
+  msgpack_pack_str(&pk, strlen(version_msg->addr_recv));
+  msgpack_pack_str_body(&pk, version_msg->addr_recv, strlen(version_msg->addr_recv));
 
   msgpack_sbuffer *header_buff = pack_header(sbuf->size);
   printf("%zu\n", header_buff->size);
@@ -75,6 +89,6 @@ msgpack_sbuffer *pack_header(int size) {
   msgpack_pack_str(&pk, 8);
   msgpack_pack_str_body(&pk, "version", 8);
 
-    return sbuf;
+  return sbuf;
 }
 

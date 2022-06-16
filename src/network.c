@@ -74,8 +74,9 @@ void read_cb(struct bufferevent *bev, void *ctx) {
     msgpack_unpacked msg_two;
     msgpack_unpacked_init(&msg_two);
     if (msgpack_unpack_next(&msg_two, peer->buffer.data, peer->buffer.size, NULL)) {
+      printf("xccece\n");
       msgpack_object root = msg_two.data;
-      printf("%s\n", root.via.map.ptr[1].key.via.str.ptr);
+      printf("%ld\n", root.via.map.ptr[2].val.via.u64);
     }
   }
 
