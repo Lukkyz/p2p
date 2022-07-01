@@ -44,42 +44,11 @@ void read_cb(struct bufferevent *bev, void *ctx) {
   int length = evbuffer_get_length(input);
   char buff[length];
   peer *peer = ctx;
+  peer->buffer.msg = malloc(sizeof(Message));
   evbuffer_remove(input, buff, length);
-  msgpack_unpacked msg;
-  msgpack_unpacked_init(&msg);
-  size_t off = 0;
-  printf("%d\n", peer->buffer.cur);
-  if (peer->buffer.cur == 0) {
-    if (msgpack_unpack_next(&msg, buff, length, &off)) {
-      msgpack_object root = msg.data;
-      int l = root.via.map.ptr[1].val.via.u64;
-      const char *msg_type = root.via.map.ptr[2].val.via.str.ptr;
-      peer->buffer.msg_type = malloc(sizeof(msg_type));
-      strcpy(peer->buffer.msg_type, msg_type);
-      printf("%s\n", peer->buffer.msg_type);
-      printf("L: %d Off: %lu SIZE: %d CUR: %d\n",length, off, l, peer->buffer.cur);
-      peer->buffer.size = l;
-      peer->buffer.data = malloc(sizeof(l));
-      int new_s = length - off;
-      printf("%lu %d\n", off, new_s);
-      char *test = malloc(sizeof(l));
-      memcpy(peer->buffer.data, buff+off, l);
-      peer->buffer.cur += l;
-    }
-  } else {
-    memcpy(peer->buffer.data+peer->buffer.cur, buff, length);
+  if (process_msg_buffer(buff, length, &peer->buffer) == 1) {
+    printf("%s\n", peer->buffer.msg->header.command);
   }
-  if (peer->buffer.size == peer->buffer.cur) {
-    printf("%d %d\n", peer->buffer.size, peer->buffer.cur);
-    msgpack_unpacked msg_two;
-    msgpack_unpacked_init(&msg_two);
-    if (msgpack_unpack_next(&msg_two, peer->buffer.data, peer->buffer.size, NULL)) {
-      printf("xccece\n");
-      msgpack_object root = msg_two.data;
-      printf("%ld\n", root.via.map.ptr[2].val.via.u64);
-    }
-  }
-
 }
 
 void accept_conn_cb(struct evconnlistener *listener, evutil_socket_t fd,

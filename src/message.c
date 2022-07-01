@@ -10,6 +10,39 @@
 #include "string.h"
 #include <msgpack.h>
 
+int process_msg_buffer(char *buff, int length, msg_buffer *buffer) {
+  msgpack_unpacked msg;
+  msgpack_unpacked_init(&msg);
+  size_t off = 0;
+  printf("%d\n", buffer->cur);
+  if (buffer->cur == 0) {
+    if (msgpack_unpack_next(&msg, buff, length, &off)) {
+      msgpack_object root = msg.data;
+      int payload_size = root.via.map.ptr[2].val.via.u64;
+      MessageHeader *header = &buffer->msg->header;
+      strcpy(header->network, root.via.map.ptr[0].val.via.str.ptr);
+      strcpy(header->command, root.via.map.ptr[1].val.via.str.ptr);
+      header->payload_size = root.via.map.ptr[2].val.via.u64;
+      buffer->size = payload_size;
+      buffer->data = malloc(payload_size);
+      memcpy(buffer->data, buff + off, payload_size);
+      buffer->cur += payload_size;
+    }
+  } else {
+    memcpy(buffer->data + buffer->cur, buff, length);
+  }
+  if (buffer->size == buffer->cur) {
+    printf("%d %d\n", buffer->size, buffer->cur);
+    msgpack_unpacked msg_two;
+    msgpack_unpacked_init(&msg_two);
+    if (msgpack_unpack_next(&msg_two, buffer->data, buffer->size, NULL)) {
+      msgpack_object root = msg_two.data;
+      return 1;
+    }
+  }
+  return -1;
+}
+
 VersionMessage *version_msg_new(char addr_recv[128], uint16_t port) {
   VersionMessage *version_msg = malloc(sizeof(*version_msg));
   version_msg->version = 1;
@@ -47,8 +80,9 @@ msgpack_sbuffer *pack_version_msg(VersionMessage *version_msg) {
 
   msgpack_pack_str(&pk, 10);
   msgpack_pack_str_body(&pk, "addr_recv", 10);
-  msgpack_pack_str(&pk, strlen(version_msg->addr_recv));
-  msgpack_pack_str_body(&pk, version_msg->addr_recv, strlen(version_msg->addr_recv));
+  msgpack_pack_str(&pk, strlen(version_msg->addr_recv) + 1);
+  msgpack_pack_str_body(&pk, version_msg->addr_recv,
+                        strlen(version_msg->addr_recv) + 1);
 
   msgpack_sbuffer *header_buff = pack_header(sbuf->size);
   printf("%zu\n", header_buff->size);
@@ -62,7 +96,7 @@ MessageHeader *header_msg_new(uint32_t payload_size, char *data) {
   strcpy(msg_header->command, "version");
   msg_header->payload_size = payload_size;
   // char sha_buff[65];
-//~  double_sha256((unsigned char *)data, sha_buff);
+  //~  double_sha256((unsigned char *)data, sha_buff);
   return msg_header;
 }
 
@@ -80,15 +114,14 @@ msgpack_sbuffer *pack_header(int size) {
   msgpack_pack_str(&pk, 5);
   msgpack_pack_str_body(&pk, "main", 5);
 
-  msgpack_pack_str(&pk, 5);
-  msgpack_pack_str_body(&pk, "size", 5);
-  msgpack_pack_int(&pk, size);
-
   msgpack_pack_str(&pk, 13);
   msgpack_pack_str_body(&pk, "message_type", 13);
   msgpack_pack_str(&pk, 8);
   msgpack_pack_str_body(&pk, "version", 8);
 
+  msgpack_pack_str(&pk, 5);
+  msgpack_pack_str_body(&pk, "size", 5);
+  msgpack_pack_int(&pk, size);
+
   return sbuf;
 }
-

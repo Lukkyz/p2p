@@ -13,13 +13,6 @@
 enum conn_dir { IN, OUT };
 
 typedef struct {
-  char *msg_type;
-  char *data;
-  int cur;
-  int size;
-} msg_buffer;
-
-typedef struct {
   struct sockaddr_in6 addr;
   int64_t timestamp;
   enum conn_dir dir;

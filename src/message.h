@@ -4,7 +4,7 @@
 #define MESSAGE_H
 
 typedef struct {
-  char network[4];
+  char network[5];
   char command[12];
   uint32_t payload_size;
 } MessageHeader;
@@ -17,8 +17,23 @@ typedef struct  {
   char addr_recv[128];
 } VersionMessage;
 
+typedef struct {
+  MessageHeader header;
+  union {
+    VersionMessage version_msg;
+  };
+} Message;
+
+typedef struct {
+  Message *msg;
+  char *data;
+  int cur;
+  int size;
+} msg_buffer;
+
+int process_msg_buffer(char *buff, int length, msg_buffer *buffer);
 msgpack_sbuffer *pack_header(int size);
-msgpack_sbuffer *pack_version_msg();
+msgpack_sbuffer *pack_version_msg(VersionMessage *version_msg);
 VersionMessage *version_msg_new(char addr_recv[128], uint16_t port);
 MessageHeader *header_msg_new(uint32_t payload_size, char *data);
 #endif
