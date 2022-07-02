@@ -20,6 +20,7 @@
 
 peer *peers[100];
 int peer_num = 0;
+const char *network;
 
 void add_peer(peer *new_peer) { peers[peer_num++] = new_peer; };
 
@@ -44,10 +45,10 @@ void read_cb(struct bufferevent *bev, void *ctx) {
   int length = evbuffer_get_length(input);
   char buff[length];
   peer *peer = ctx;
-  peer->buffer.msg = malloc(sizeof(Message));
   evbuffer_remove(input, buff, length);
   if (process_msg_buffer(buff, length, &peer->buffer) == 1) {
-    printf("%s\n", peer->buffer.msg->header.command);
+      printf("%s\n", peer->buffer.msg->header.network);
+      printf("%s\n", network);
   }
 }
 
@@ -66,6 +67,7 @@ void accept_conn_cb(struct evconnlistener *listener, evutil_socket_t fd,
   new_peer->bev = bev;
   new_peer->buffer.cur = 0;
   new_peer->buffer.size = 0;
+  new_peer->buffer.msg = malloc(sizeof(Message));
   add_peer(new_peer);
   // printf("%s %d\n", ip, conn_addr->sin6_port);
   bufferevent_setcb(bev, read_cb, NULL, NULL, new_peer);
@@ -117,7 +119,8 @@ void *get_in(void *arg) {
   }
 }
 
-void node_init(int serv_port, int conn_port) {
+void node_init(int serv_port, int conn_port, const char *config_network) {
+  network = config_network;
   struct event_base *base = event_base_new();
   struct evconnlistener *listener;
   struct sockaddr_in6 servaddr = create_addr(serv_port, "::1");

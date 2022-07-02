@@ -14,7 +14,6 @@ int process_msg_buffer(char *buff, int length, msg_buffer *buffer) {
   msgpack_unpacked msg;
   msgpack_unpacked_init(&msg);
   size_t off = 0;
-  printf("%d\n", buffer->cur);
   if (buffer->cur == 0) {
     if (msgpack_unpack_next(&msg, buff, length, &off)) {
       msgpack_object root = msg.data;
@@ -25,22 +24,46 @@ int process_msg_buffer(char *buff, int length, msg_buffer *buffer) {
       header->payload_size = root.via.map.ptr[2].val.via.u64;
       buffer->size = payload_size;
       buffer->data = malloc(payload_size);
-      memcpy(buffer->data, buff + off, payload_size);
-      buffer->cur += payload_size;
+      memcpy(buffer->data, buff + off, length - off);
+      buffer->cur += length - off;
     }
   } else {
     memcpy(buffer->data + buffer->cur, buff, length);
+    buffer->cur += length;
   }
   if (buffer->size == buffer->cur) {
-    printf("%d %d\n", buffer->size, buffer->cur);
     msgpack_unpacked msg_two;
     msgpack_unpacked_init(&msg_two);
     if (msgpack_unpack_next(&msg_two, buffer->data, buffer->size, NULL)) {
       msgpack_object root = msg_two.data;
+      unpack_version_msg(root, &buffer->msg->version_msg);
       return 1;
     }
   }
   return -1;
+}
+
+void *unpack_version_msg(msgpack_object root, VersionMessage *version_msg) {
+  for (int i = 0; i < root.via.map.size; i++) {
+    msgpack_object_kv kv = root.via.map.ptr[i];
+    const char *key = kv.key.via.str.ptr;
+    if (strcmp(key, "version") == 0) {
+      version_msg->version = kv.val.via.u64;
+    }
+    if (strcmp(key, "services") == 0) {
+      version_msg->services = kv.val.via.u64;
+    }
+    if (strcmp(key, "timestamp") == 0) {
+      version_msg->timestamp = kv.val.via.u64;
+    }
+    if (strcmp(key, "addr_recv_port") == 0) {
+      version_msg->addr_recv_port = kv.val.via.u64;
+    }
+    if (strcmp(key, "addr_recv") == 0) {
+      strcpy(version_msg->addr_recv, kv.val.via.str.ptr);
+    }
+  }
+  return version_msg;
 }
 
 VersionMessage *version_msg_new(char addr_recv[128], uint16_t port) {

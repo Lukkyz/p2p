@@ -26,6 +26,6 @@ void read_cb(struct bufferevent *bev, void *ctx);
 void accept_conn_cb(struct evconnlistener *listener, evutil_socket_t fd,
                     struct sockaddr *address, int socklen, void *ctx);
 int connect_node(struct event_base *base, int port, char address[]);
-void node_init(int serv_port, int conn_port);
+void node_init(int serv_port, int conn_port, const char *config_network);
 void *event_thread(void *arg);
 #endif

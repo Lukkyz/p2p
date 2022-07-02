@@ -21,7 +21,7 @@
 #define SA struct sockaddr
 
 typedef struct {
-  bool local;
+  const char *network;
 } configuration;
 
 void interrupt_cb(int code) {
@@ -42,8 +42,8 @@ static int handler(void *user, const char *section, const char *name,
                    const char *value) {
   configuration *pconfig = (configuration *)user;
 #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
-  if (MATCH("protocol", "local")) {
-    pconfig->local = true;
+  if (MATCH("protocol", "network")) {
+    pconfig->network = strdup(value);
   } else {
     return 0;
   }
@@ -61,8 +61,6 @@ int main(int argc, char *argv[]) {
     printf("Can't load config.ini'");
     return 1;
   }
-
-  printf("Config loaded from test ini; local=%d\n", config.local);
-  node_init(serv_port, conn_port);
+  node_init(serv_port, conn_port, config.network);
   return 0;
 }

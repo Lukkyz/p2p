@@ -31,6 +31,8 @@ typedef struct {
   int size;
 } msg_buffer;
 
+
+void *unpack_version_msg(msgpack_object root, VersionMessage *version_msg);
 int process_msg_buffer(char *buff, int length, msg_buffer *buffer);
 msgpack_sbuffer *pack_header(int size);
 msgpack_sbuffer *pack_version_msg(VersionMessage *version_msg);
